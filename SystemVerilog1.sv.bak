@@ -1,0 +1,19 @@
+module testbench();
+
+
+test_adc test_adc_inst (
+
+	.clk_i				(),
+	.reset_n_i			(),
+	//ADC interface
+	.adc_data_req_o	(),
+	.adc_data_rdy_i	(),
+	.adc_data_i			(),
+	//Module output interface
+	.syncro_i			(),
+	.data_o				(),
+	.data_rdy_o			()
+);
+
+
+endmodule

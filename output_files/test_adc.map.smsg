@@ -1,0 +1,2 @@
+Warning (10268): Verilog HDL information at test_adc.v(65): always construct contains both blocking and non-blocking assignments File: D:/Netlist/test_adc/test_adc.v Line: 65
+Warning (10268): Verilog HDL information at test_adc.v(83): always construct contains both blocking and non-blocking assignments File: D:/Netlist/test_adc/test_adc.v Line: 83

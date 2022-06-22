@@ -1,0 +1,45 @@
+module data_acquire(
+	input clk_i,
+	input reset_n_i,
+	
+//ADC interface
+	output	adc_data_req_o,
+	input	adc_data_rdy_i,
+	input [11:0] adc_data_i
+	
+//Module output interface
+	input				syncro_i,
+	output [11:0]	data_o,
+	output 			data_rdy_o
+);
+
+	reg [11:0] sr_i;
+	reg [7:0] valid_i;
+	wire v_out_i;
+	
+
+	always @(posedge clk_i or negedge reset_n_i or negedge syncro_i)
+		begin
+			if (!reset_n_i)
+				sr_i <= 11'b0;
+			else
+				sr_i <= {sr_i[10:0], syncro_i};
+		end
+
+	
+
+	always @(posedge clk_i or negedge resetn_i)
+		begin
+			if (!reset_n_i)
+				valid_i <= 8'b0;
+			else if (sr_i[0])
+				valid_i <= {valid_i[7:0], sr_i[0]};
+		end
+
+	always @(*)
+		begin			
+			for (i = 0, i < 9, i = i + 1 ) begin
+				v_out_i = valid_i[i] || valid_i[i+1];  
+		end
+
+	assign adc_data_req_o = v_out_i;
