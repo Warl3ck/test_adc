@@ -20,14 +20,16 @@ module test_adc(
 	reg [7:0] valid_i;
 	reg adc_data_req_i;
 	reg sync_in;
-	reg adc_data_rdy_z;
-	wire strb_i;
-	reg latch_strb;
-	reg signed [11:0] data_array [0:8];
-	reg signed [12:0] sum_elements_of_array [0:3];
-	reg signed [12:0] sum_of_sum[0:1];
-	reg signed [12:0] sum_of_total;
-	reg [11:0] data_shift;
+	reg 						adc_data_rdy_z;
+	wire 						strb_i;
+	reg 						latch_strb;
+	reg signed 	[11:0] 	data_array [0:8];
+	reg signed 	[12:0] 	sum_elements_of_array [0:3];
+	reg signed 	[12:0] 	sum_of_sum[0:1];
+	reg signed 	[12:0] 	sum_of_total;
+	reg 			[11:0] 	data_shift;
+	reg			[3:0]		counter;
+	
 	
 	integer i,j,k,r;
 	
@@ -62,61 +64,6 @@ module test_adc(
 	end
 	
 
-	always @(posedge clk_i or negedge reset_n_i)
-	begin
-		if (!reset_n_i) begin
-			for (i = 0; i < 8; i = i + 1) begin
-				data_array[i] <= {12{1'b0}};
-			end	
-		end else if (adc_data_rdy_i) begin
-				data_array[0] = adc_data_i;
-				for (i = 0; i < 8; i = i + 1) begin
-					data_array[i+1] <= data_array[i];
-			end
-		end
-	end
-
-	
-	// sum of even and odd
-	always @(*)
-	begin
-		if (!reset_n_i) begin
-			for (k = 1; k < 8; k = k + 2) begin
-				sum_elements_of_array[k/2] <= 13'h0;
-			end	
-		end else begin
-			for (k = 1; k < 8; k = k + 2) begin
-				sum_elements_of_array[k/2] = data_array[k] + data_array[k+1];
-				
-			end	
-		end	
-	end
-	
-
-	//sum of sum 
-	always @(*)
-	begin
-		for (j = 1; j < 4; j = j + 2) begin
-			sum_of_sum[j/2] = sum_elements_of_array[j-1][12:1] + sum_elements_of_array[j][12:1];
-		end		
-	end
-	
-	
-	always @(*)
-	begin
-		sum_of_total = sum_of_sum[0][12:1] + sum_of_sum[1][12:1];
-	end	
-	
-	
-	always @(posedge clk_i or negedge reset_n_i)
-	begin
-		if (!reset_n_i)
-			data_shift <= {12{1'b0}};
-		else if (strb_i)
-			data_shift <= (sum_of_total) >> 3;
-	end		
-	
-	
 	// strob	valid data
 	always @(posedge clk_i or negedge reset_n_i)
 	begin
@@ -128,14 +75,85 @@ module test_adc(
 	
 	assign strb_i = adc_data_rdy_z && (!adc_data_rdy_i);
 	
+	
+	
+	always @(posedge clk_i or negedge reset_n_i)
+	begin
+		if (!reset_n_i) begin
+			for (i = 0; i < 8; i = i + 1) begin
+				data_array[i] <= {12{1'b0}};
+			end	
+		end else if (strb_i) begin
+				data_array[0] = adc_data_i;
+				for (i = 0; i < 8; i = i + 1) begin
+					data_array[i+1] <= data_array[i];
+			end
+		end
+	end
+
+	
 	always @(posedge clk_i or negedge reset_n_i)
 	begin
 		if (!reset_n_i)
-			latch_strb <= 1'b0;
-		else if (strb_i)
-			latch_strb <= 1'b1;
-	end		
+			counter <= 4'b0;
+		else if (strb_i)	
+			counter <= counter + 1;
+		else if (counter == 8)
+			counter <= 4'b0;
+	end
 	
+	
+	// sum of even and odd
+	always @(*)
+	begin
+		if (!reset_n_i) begin
+			for (k = 1; k < 8; k = k + 2) begin
+				sum_elements_of_array[k/2] <= 13'h0;
+			end	
+		end else if (counter == 8) begin
+			for (k = 1; k < 8; k = k + 2) begin
+				sum_elements_of_array[k/2] = data_array[k] + data_array[k+1];
+				
+			end	
+		end	
+	end
+	
+
+	//sum of sum 
+	always @(*)
+	begin
+		if (counter == 8) begin
+			for (j = 1; j < 4; j = j + 2) begin
+				sum_of_sum[j/2] = sum_elements_of_array[j-1][12:1] + sum_elements_of_array[j][12:1];
+			end
+		end
+	end
+
+	always @(*)
+	begin
+		if (counter == 8) begin
+			sum_of_total = sum_of_sum[0][12:1] + sum_of_sum[1][12:1];
+		end	
+	end	
+	
+	
+	always @(posedge clk_i or negedge reset_n_i)
+	begin
+		if (!reset_n_i) begin
+			data_shift <= {12{1'b0}};
+			latch_strb <= 1'b0;
+		end else if (counter == 8) begin
+			data_shift <= (sum_of_total) >> 3;
+			latch_strb <= 1'b1;
+		end	
+	end		
+
+//	always @(*)
+//	begin
+//		if (counter == 8)
+//			latch_strb <= 1'b1;
+//	end		
+
 	
 	always @(*)
 	begin
@@ -145,6 +163,8 @@ module test_adc(
 		end	
 	end
 	
+	
+
 	
 	assign adc_data_req_o = adc_data_req_i;
 	assign data_rdy_o = latch_strb;

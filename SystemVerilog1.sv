@@ -37,7 +37,7 @@ always #(clk_period/2) clk_i <= ~clk_i;
 				sync_i = 1'b0;
 				#(clk_period*15);
 				num++;
-			if (num == 10) break;
+			if (num == 8) $stop;
 		end	
 	end
 
@@ -47,8 +47,6 @@ always #(clk_period/2) clk_i <= ~clk_i;
 		#500ns
 		reset_n_i = 1'b1;
 		-> reset_done;
-		#5us
-		$finish;
 	end
 	
 
@@ -61,11 +59,10 @@ always #(clk_period/2) clk_i <= ~clk_i;
 	assign adc_data_rdy_i = shift_reg[0] || shift_reg[1] || shift_reg[2] || shift_reg[3] || shift_reg[4] || shift_reg[5] || shift_reg[6] || shift_reg[7];
 
 	
-	always @(posedge clk_i) 
+	always @(*) 
 	begin
-		if(shift_reg[8:1] > 0) begin
+		if(adc_data_rdy_i)
 			adc_data <= $random;	
-		end	
 	end
 	
 
